@@ -44,22 +44,20 @@
 #define PW "nohayinternet"
 
 /* Cambia la configuración IP de tu red local */
-#define LOCALIP "192.168.0.226" // String for the local server configuration
-IPAddress ip_addr(192,168,0,126); //Requested static IP address for the ESP
-IPAddress gw(192,168,0,1); // IP address for the Wifi router
+#define LOCALIP "192.168.223.49" // String for the local server configuration
+IPAddress ip_addr(192,168,223,49); //Requested static IP address for the ESP
+IPAddress gw(192,168,223,1); // IP address for the Wifi router
 IPAddress netmask(255,255,255,0);
 
+/* PIN de la tira de LED */
+#define PIN 2 // Pin for RGB LED stripe
+#define STRIP_SIZE 60 // Number of LEDs
 
 #define DNS = "8.8.8.8"
 
 ESP8266WebServer server ( 80 );
 
-const int led = 13;
-
 int colors[3] = {0, 0, 0};
-
-
-#define PIN 2
 
 // Parameter 1 = number of pixels in strip
 // Parameter 2 = Arduino pin number (most are valid)
@@ -68,11 +66,10 @@ int colors[3] = {0, 0, 0};
 //   NEO_KHZ400  400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
 //   NEO_GRB     Pixels are wired for GRB bitstream (most NeoPixel products)
 //   NEO_RGB     Pixels are wired for RGB bitstream (v1 FLORA pixels, not v2)
-Adafruit_NeoPixel strip = Adafruit_NeoPixel(60, PIN, NEO_GRB + NEO_KHZ800);
+Adafruit_NeoPixel strip = Adafruit_NeoPixel(STRIP_SIZE, PIN, NEO_GRB + NEO_KHZ800);
 
 
 void handleRoot() {
-	digitalWrite ( led, 1 );
 	char temp[800];
 	int sec = millis() / 1000;
 	int min = sec / 60;
@@ -103,11 +100,9 @@ void handleRoot() {
 		hr, min % 60, sec % 60
 	);
 	server.send ( 200, "text/html", temp );
-	digitalWrite ( led, 0 );
 }
 
 void handleNotFound() {
-	digitalWrite ( led, 1 );
 	String message = "File Not Found\n\n";
 	message += "URI: ";
 	message += server.uri();
@@ -122,7 +117,6 @@ void handleNotFound() {
 	}
 
 	server.send ( 404, "text/plain", message );
-	digitalWrite ( led, 0 );
 }
 
 void setup ( void ) {

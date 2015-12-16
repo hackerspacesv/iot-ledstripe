@@ -34,18 +34,21 @@ To program the ESP8266 you'll also need:
 IPAddress ip_addr(192,168,0,126); // Static IP to use
 IPAddress gw(192,168,0,1); // Default gateway
 IPAddress netmask(255,255,255,0); // Netmask
+
+/* PIN de la tira de LED */
+#define PIN 2 // Pin for RGB LED stripe
+#define STRIP_SIZE 60 // Number of LEDs
 ```
-* Upload your Sketch to the ESP8266, this Sketch also requires the Adafruit's NeoPixel library https://github.com/adafruit/Adafruit_NeoPixel (*)
+* Upload your Sketch to the ESP8266, this Sketch also requires the Adafruit's NeoPixel library https://github.com/adafruit/Adafruit_NeoPixel (1)
 * Connect everything as shown on the Fritzing project file.
 * Install the App RemoteRGBTest.apk included on "AppInventor/binaries". If you don't trust me download the "aia" Project for MIT App Inventor and compile the APK from there
 * Power everything up and cross your fingers
 * If you are still alive and nothing was burn in the process open the App in your cellphone and specify the IP address of the module. To change colors use the sliders and click on "Send color" when ready
 * Have fun
 
-(*) Here is a really good tutorial if you don't know how to do it: http://makezine.com/2015/04/01/installing-building-arduino-sketch-5-microcontroller/
+(1) Here is a really good tutorial if you don't know how to do it: http://makezine.com/2015/04/01/installing-building-arduino-sketch-5-microcontroller/
 
-A detailed tutorial (in Spanish) can be found at http://blog.teubi.co/
-
+A detailed tutorial (in Spanish) can be found at http://blog.teubi.co/2015/12/Tira-LED-IoT.html
 
 ## Who are you and where can I find more projects like this?
 TeUbi.co is an electronic component store based in El Salvador, a small but beautiful country in Central Americas.
