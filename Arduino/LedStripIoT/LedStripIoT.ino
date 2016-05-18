@@ -26,10 +26,6 @@
  * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- * 
- * IoT LED stripe controller by (Mario Gomez @ Teubi.co). For more info visit:
- * http://blog.teubi.co/
- * 
  */
 
 #include <ESP8266WiFi.h>
@@ -38,26 +34,27 @@
 #include <ESP8266mDNS.h>
 #include <string.h>
 #include <Adafruit_NeoPixel.h>
+#include "DHT.h"
 
-/* Agrega el nombre y clave de acceso de tu red inalambrica*/
-#define SSID "Manda internet al 2020"
-#define PW "nohayinternet"
-
-/* Cambia la configuración IP de tu red local */
-#define LOCALIP "192.168.223.49" // String for the local server configuration
-IPAddress ip_addr(192,168,223,49); //Requested static IP address for the ESP
-IPAddress gw(192,168,223,1); // IP address for the Wifi router
+#define SSID "HACKERSPACE_SV"
+#define PW "314159265358979"
+IPAddress ip_addr(192,168,1,99); //Requested static IP address for the ESP
+IPAddress gw(192,168,1,1); // IP address for the Wifi router
 IPAddress netmask(255,255,255,0);
-
-/* PIN de la tira de LED */
-#define PIN 2 // Pin for RGB LED stripe
-#define STRIP_SIZE 60 // Number of LEDs
-
-#define DNS = "8.8.8.8"
+#define DNS = "192.168.1.100"
 
 ESP8266WebServer server ( 80 );
 
+const int led = 13;
+
 int colors[3] = {0, 0, 0};
+
+
+#define PIN 2
+
+#define DHTPIN 0     // what digital pin we're connected to
+#define DHTTYPE DHT22   // DHT 22  (AM2302), AM2321
+DHT dht(DHTPIN, DHTTYPE);
 
 // Parameter 1 = number of pixels in strip
 // Parameter 2 = Arduino pin number (most are valid)
@@ -66,16 +63,17 @@ int colors[3] = {0, 0, 0};
 //   NEO_KHZ400  400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
 //   NEO_GRB     Pixels are wired for GRB bitstream (most NeoPixel products)
 //   NEO_RGB     Pixels are wired for RGB bitstream (v1 FLORA pixels, not v2)
-Adafruit_NeoPixel strip = Adafruit_NeoPixel(STRIP_SIZE, PIN, NEO_GRB + NEO_KHZ800);
+Adafruit_NeoPixel strip = Adafruit_NeoPixel(120, PIN, NEO_GRB + NEO_KHZ800);
 
 
 void handleRoot() {
-	char temp[800];
+	digitalWrite ( led, 1 );
+	char temp[400];
 	int sec = millis() / 1000;
 	int min = sec / 60;
 	int hr = min / 60;
 
-	snprintf ( temp, 778,
+	snprintf ( temp, 400,
 
 "<html>\
   <head>\
@@ -88,21 +86,18 @@ void handleRoot() {
   <body>\
     <h1>Hello from ESP8266!</h1>\
     <p>Uptime: %02d:%02d:%02d</p>\
-    <form action=\"http://" LOCALIP "/setColor\" method=\"GET\">\
-      <label for=\"rVal\">Intensidad rojo (0-255): </label><input type=\"text\" name=\"rVal\" value=\"0\"/><br />\
-      <label for=\"gVal\">Intensidad verde (0-255): </label><input type=\"text\" name=\"gVal\" value=\"0\"/><br />\
-      <label for=\"bVal\">Intensidad azul (0-255): </label><input type=\"text\" name=\"bVal\" value=\"0\"/><br />\
-      <input type=\"submit\" value=\"Cambiar color\" />\
-    </form>\
+    <img src=\"/test.svg\" />\
   </body>\
 </html>",
 
 		hr, min % 60, sec % 60
 	);
 	server.send ( 200, "text/html", temp );
+	digitalWrite ( led, 0 );
 }
 
 void handleNotFound() {
+	digitalWrite ( led, 1 );
 	String message = "File Not Found\n\n";
 	message += "URI: ";
 	message += server.uri();
@@ -117,10 +112,12 @@ void handleNotFound() {
 	}
 
 	server.send ( 404, "text/plain", message );
+	digitalWrite ( led, 0 );
 }
 
 void setup ( void ) {
 	Serial.begin ( 115200 );
+  pinMode( PIN, OUTPUT);
 
 
   WiFi.config(ip_addr,gw,netmask);
@@ -147,6 +144,8 @@ void setup ( void ) {
 
 	server.on ( "/", handleRoot );
   server.on ( "/setColor", handleChangeColor);
+  server.on ( "/getTemp", handleGetTemp);
+  server.on ( "/setBlockColor", handleSetBlockColor);
 	server.onNotFound ( handleNotFound );
 	server.begin();
 	Serial.println ( "HTTP server started" );
@@ -185,13 +184,69 @@ bool isValidInt(char* content) {
     }
   }
   return validInt;
-}*/
+}
+*/
 
 uint8_t lastVal = 0;
 uint8_t newVal = 0;
+uint8_t first = 0;
+uint8_t last = 120;
 
+
+void handleGetTemp() {
+  String out = "{ \"humidity\" : ";
+  char buff[11];
+  float h = dht.readHumidity();
+  itoa(h*100,buff,10);
+  out += buff;
+  out += " , \"temp\" : ";
+  // Read temperature as Celsius (the default)
+  float t = dht.readTemperature();
+  itoa(t*100,buff,10);
+  out += buff;
+  out += "}";
+  server.send ( 200, "application/json", out);
+  Serial.println("Client served");
+}
+
+void handleSetBlockColor() {
+  String out = "{ \"status\" : \"error\" }"; // Fall-backs on error by default
+  char buff[11];
+  if(server.method() == HTTP_GET && server.args()==5) {
+    if(
+      isArgSet("start") &&
+      isArgSet("end") &&
+      isArgSet("rVal") &&
+      isArgSet("gVal") &&
+      isArgSet("bVal")
+      ) {
+        server.arg(argPos("start")).toCharArray(buff,10);
+        first = atoi(buff);
+        server.arg(argPos("end")).toCharArray(buff,10);
+        last = atoi(buff);
+        server.arg(argPos("rVal")).toCharArray(buff,10);
+        colors[0] = atoi(buff);
+        Serial.print("RED: ");
+        Serial.println(colors[0], DEC);
+        newVal = colors[0];
+        server.arg(argPos("gVal")).toCharArray(buff,10);
+        Serial.print("GREEN: ");
+        Serial.println(colors[1], DEC);
+        colors[1] = atoi(buff);
+        newVal ^= colors[1];
+        server.arg(argPos("bVal")).toCharArray(buff,10);
+        Serial.print("BLUE: ");
+        Serial.println(colors[2], DEC);
+        colors[2] = atoi(buff);
+        newVal ^= colors[2];
+        out = "{ \"status\" : \"ok\" }";
+    }
+  }
+  server.send ( 200, "application/json", out);
+  Serial.println("Client served");
+}
 void handleChangeColor() {
-  String out = "{ 'status' = 'error' }"; // Fall-backs on error by default
+  String out = "{ \"status\" : \"error\" }"; // Fall-backs on error by default
   char buff[11];
   if(server.method() == HTTP_GET && server.args()==3) {
     if(
@@ -201,22 +256,30 @@ void handleChangeColor() {
       ) {
         server.arg(argPos("rVal")).toCharArray(buff,10);
         colors[0] = atoi(buff);
-        newVal ^= colors[0];
+        Serial.print("RED: ");
+        Serial.println(colors[0], DEC);
+        newVal = colors[0];
         server.arg(argPos("gVal")).toCharArray(buff,10);
+        Serial.print("GREEN: ");
+        Serial.println(colors[1], DEC);
         colors[1] = atoi(buff);
         newVal ^= colors[1];
         server.arg(argPos("bVal")).toCharArray(buff,10);
+        Serial.print("BLUE: ");
+        Serial.println(colors[2], DEC);
         colors[2] = atoi(buff);
         newVal ^= colors[2];
-        out = "{ 'status' = 'ok' }";
+        out = "{ \"status\" = \"ok\" }";
+        first = 0;
+        last = strip.numPixels();
     }
   }
   server.send ( 200, "application/json", out);
   Serial.println("Client served");
 }
 
-void colorWipe(uint32_t c, uint8_t wait) {
-  for(uint16_t i=0; i<strip.numPixels(); i++) {
+void colorWipe(uint8_t first, uint8_t last, uint32_t c, uint8_t wait) {
+  for(uint16_t i=first; i<last; i++) {
     strip.setPixelColor(i, c);
     strip.show();
     delay(wait);
@@ -225,14 +288,21 @@ void colorWipe(uint32_t c, uint8_t wait) {
 
 uint16_t i=0;
 
+enum {
+  STATE_IDLE = 0,
+  STATE_WIPE_COLOR,
+  STATE_SET_COLOR
+} MACHINE_STATES;
+
 void loop ( void ) {
 	server.handleClient();
   if(lastVal!=newVal) {
     ESP.wdtDisable();
     Serial.println("Changing color stripe");
-    colorWipe(strip.Color(colors[0], colors[1], colors[2]), 10);
+    colorWipe(first,last,strip.Color(colors[0], colors[1], colors[2]), 10);
     lastVal = newVal;
     ESP.wdtEnable(20000);
   }
 }
+
 
