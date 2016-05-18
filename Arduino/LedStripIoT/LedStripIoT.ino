@@ -37,24 +37,25 @@
 #include "DHT.h"
 
 #define SSID "HACKERSPACE_SV"
-#define PW "314159265358979"
+#define PW "pi*10^14"
 IPAddress ip_addr(192,168,1,99); //Requested static IP address for the ESP
 IPAddress gw(192,168,1,1); // IP address for the Wifi router
 IPAddress netmask(255,255,255,0);
-#define DNS = "192.168.1.100"
+
+/* PIN de la tira de LED */
+#define PIN 2 // Pin for RGB LED stripe
+#define STRIP_SIZE 60 // Number of LEDs
+
+#define DNS = "8.8.8.8"
 
 ESP8266WebServer server ( 80 );
 
-const int led = 13;
-
 int colors[3] = {0, 0, 0};
-
-
-#define PIN 2
 
 #define DHTPIN 0     // what digital pin we're connected to
 #define DHTTYPE DHT22   // DHT 22  (AM2302), AM2321
 DHT dht(DHTPIN, DHTTYPE);
+
 
 // Parameter 1 = number of pixels in strip
 // Parameter 2 = Arduino pin number (most are valid)
@@ -67,8 +68,7 @@ Adafruit_NeoPixel strip = Adafruit_NeoPixel(120, PIN, NEO_GRB + NEO_KHZ800);
 
 
 void handleRoot() {
-	digitalWrite ( led, 1 );
-	char temp[400];
+  char temp[400];
 	int sec = millis() / 1000;
 	int min = sec / 60;
 	int hr = min / 60;
@@ -77,7 +77,7 @@ void handleRoot() {
 
 "<html>\
   <head>\
-    <meta http-equiv='refresh' content='5'/>\
+    <meta http-equiv='refresh' content='60'/>\
     <title>ESP8266 Demo</title>\
     <style>\
       body { background-color: #cccccc; font-family: Arial, Helvetica, Sans-Serif; Color: #000088; }\
@@ -93,11 +93,9 @@ void handleRoot() {
 		hr, min % 60, sec % 60
 	);
 	server.send ( 200, "text/html", temp );
-	digitalWrite ( led, 0 );
 }
 
 void handleNotFound() {
-	digitalWrite ( led, 1 );
 	String message = "File Not Found\n\n";
 	message += "URI: ";
 	message += server.uri();
@@ -112,7 +110,6 @@ void handleNotFound() {
 	}
 
 	server.send ( 404, "text/plain", message );
-	digitalWrite ( led, 0 );
 }
 
 void setup ( void ) {
@@ -187,6 +184,7 @@ bool isValidInt(char* content) {
 }
 */
 
+
 uint8_t lastVal = 0;
 uint8_t newVal = 0;
 uint8_t first = 0;
@@ -208,6 +206,8 @@ void handleGetTemp() {
   server.send ( 200, "application/json", out);
   Serial.println("Client served");
 }
+
+bool updateColor = false;
 
 void handleSetBlockColor() {
   String out = "{ \"status\" : \"error\" }"; // Fall-backs on error by default
@@ -245,6 +245,7 @@ void handleSetBlockColor() {
   server.send ( 200, "application/json", out);
   Serial.println("Client served");
 }
+
 void handleChangeColor() {
   String out = "{ \"status\" : \"error\" }"; // Fall-backs on error by default
   char buff[11];
@@ -263,7 +264,6 @@ void handleChangeColor() {
         Serial.print("GREEN: ");
         Serial.println(colors[1], DEC);
         colors[1] = atoi(buff);
-        newVal ^= colors[1];
         server.arg(argPos("bVal")).toCharArray(buff,10);
         Serial.print("BLUE: ");
         Serial.println(colors[2], DEC);
@@ -272,6 +272,8 @@ void handleChangeColor() {
         out = "{ \"status\" = \"ok\" }";
         first = 0;
         last = strip.numPixels();
+        updateColor = true;
+        out = "{ 'status' = 'ok' }";
     }
   }
   server.send ( 200, "application/json", out);
@@ -296,7 +298,7 @@ enum {
 
 void loop ( void ) {
 	server.handleClient();
-  if(lastVal!=newVal) {
+  if(updateColor) {
     ESP.wdtDisable();
     Serial.println("Changing color stripe");
     colorWipe(first,last,strip.Color(colors[0], colors[1], colors[2]), 10);
@@ -304,5 +306,3 @@ void loop ( void ) {
     ESP.wdtEnable(20000);
   }
 }
-
-
