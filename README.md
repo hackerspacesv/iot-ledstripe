@@ -6,9 +6,10 @@ The project is just a proof-of-concept to demonstrate the capabilities of the ES
 ## What's on this repository
 We tried to include all the basic pieces to build and run this project. This are the project folders an it's contents:
 
-1. *Arduino*: Contains the sketch used with the ESP8266. The sketch sets-up a small web server and also controls the LED stripe.
+1. *Arduino*: Contains the sketch used with the ESP8266. The sketch **LEDStripeIoT** sets-up a small web server and also controls the LED stripe. The sketch **UDPLEDStripe** listen for UDP packets to change the LED colors.
 2. *AppInventor*: Includes the MIT's App Inventor project file that you can use as a template to control the LED stripe from Android.
 3. *Fritzing*: This contains a fritzing project to help you to connect all the pieces together.
+3. *Source*: Contains Python 2.7 examples to send UDP packets when using the UDPLEDStripe sketch.
 
 ## Materials (BOM)
 To build this project you'll need at least this components:
@@ -62,6 +63,8 @@ https://www.instagram.com/teubico
 http://blog.teubi.co/
 
 https://twitter.com/teubico
+
+https://www.youtube.com/tiendateubico
 
 ## Copyrights
 IoT LED Stripe Controller v0.1
