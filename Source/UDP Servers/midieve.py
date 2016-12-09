@@ -1,6 +1,6 @@
 # IoT LED Stripe Controller v0.1
 # UDP Server to display MIDI events mapped to the LED Stripe
-# Copyright 2015. Mario Gómez <mario _dot_ gomez -at- teubi.co>
+# Copyright 2015. Mario GÃ³mez <mario _dot_ gomez -at- teubi.co>
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -37,25 +37,36 @@ for x in range( 0, pygame.midi.get_count() ):
 inp = pygame.midi.Input(1)
 
 # run the event loop
-while True:
-  if inp.poll():
-    # no way to find number of messages in queue
-    # so we just specify a high max value
-    payload = ""
-    for val in inp.read(1000):
-      print val
-      bytes = []
-      if val[0][0]==128:
-        bytes = [(val[0][1]-36)*2, 0, 0, 0]
-      if val[0][0]==144:
-        bytes = [(val[0][1]-36)*2, val[0][2]*2, val[0][2]*2, val[0][2]*2]
-      payload = payload + "".join(map(chr, bytes))
-      if val[0][0]==128:
-        bytes = [(val[0][1]-36)*2+1, 0, 0, 0]
-      if val[0][0]==144:
-        bytes = [(val[0][1]-36)*2+1, val[0][2]*2, val[0][2]*2, val[0][2]*2]
-      payload = payload + "".join(map(chr, bytes))
-    sock.sendto(payload,(UDP_IP, UDP_PORT))
-  # wait 10ms - this is arbitrary, but wait(0) still resulted
-  # in 100% cpu utilization
-  pygame.time.wait(10)
+try:
+        while True:
+          if inp.poll():
+            # no way to find number of messages in queue
+            # so we just specify a high max value
+            payload = ""
+            for val in inp.read(1000):
+              print val
+              bytes = []
+              if val[0][0]==128:
+                bytes = [(val[0][1]-36)*2, 0, 0, 0]
+              if val[0][0]==144:
+                bytes = [(val[0][1]-36)*2, val[0][2]*2, val[0][2]*2, val[0][2]*2]
+              payload = payload + "".join(map(chr, bytes))
+              if val[0][0]==128:
+                bytes = [(val[0][1]-36)*2+1, 0, 0, 0]
+              if val[0][0]==144:
+                bytes = [(val[0][1]-36)*2+1, val[0][2]*2, val[0][2]*2, val[0][2]*2]
+              payload = payload + "".join(map(chr, bytes))
+            sock.sendto(payload,(UDP_IP, UDP_PORT))
+          # wait 10ms - this is arbitrary, but wait(0) still resulted
+          # in 100% cpu utilization
+          pygame.time.wait(10)
+except KeyboardInterrupt:
+  print "adios :) "
+  packet  = [None] * 480 # Full LED Stripe
+  for a in range(120):
+    packet[(a*4)]=a;
+    packet[(a*4)+1]=0
+    packet[(a*4)+2]=0
+    packet[(a*4)+3]=0
+  payload = "".join(map(chr, packet))
+  sock.sendto(payload,(UDP_IP, UDP_PORT))
