@@ -1,6 +1,7 @@
+
 # IoT LED Stripe Controller v0.1
 # UDP Server to display rainbow colors on the stripe
-# Copyright 2015. Mario Gómez <mario _dot_ gomez -at- teubi.co>
+# Copyright 2015. Mario GÃ³mez <mario _dot_ gomez -at- teubi.co>
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -14,6 +15,7 @@
 #  You should have received a copy of the GNU General Public License 
 #  along with this program.  If not, see 
 #  <http://www.gnu.org/licenses/>.
+
 
 import sys, pygame
 import socket, math
@@ -34,9 +36,9 @@ gammaG = [None] * 181
 gammaB = [None] * 181
 
 for i in range(0,181):
-  gammaR[i] = int(round(25 * math.pow(i/181.0, 1/0.75)))
-  gammaG[i] = int(round(25 * math.pow(i/181.0, 1/0.50)))
-  gammaB[i] = int(round(25 * math.pow(i/181.0, 1/0.40)))
+  gammaR[i] = int(round(255 * math.pow(i/181.0, 1/0.75)))
+  gammaG[i] = int(round(255 * math.pow(i/181.0, 1/0.50)))
+  gammaB[i] = int(round(255 * math.pow(i/181.0, 1/0.40)))
 
 
 # Pre-Compute rainbow
@@ -86,7 +88,7 @@ for i in range(0,120):
       bVal = 0
 
 step = 0
-while True:
+try:
   for i in range(0,120):
     rainbowPos = i+step%120
     if rainbowPos > 119:
@@ -99,3 +101,12 @@ while True:
   sock.sendto(payload,(UDP_IP, UDP_PORT))
   pygame.time.wait(25)
   step = step + 1
+except Exception:
+  packet  = [None] * 480 # Full LED Stripe
+  for a in range(120):
+    packet[(a*4)]=a;
+    packet[(a*4)+1]=0
+    packet[(a*4)+2]=0
+    packet[(a*4)+3]=0
+  payload = "".join(map(chr, packet))
+  sock.sendto(payload,(UDP_IP, UDP_PORT))
